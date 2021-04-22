@@ -47,7 +47,6 @@ export class HttpServer {
                 const result = await this.config.collector.call(method, params)
                 results.push({ jsonrpc: '2.0', id, result })
             } catch (error) {
-                console.error(`error on request #${nonce}`, error.message)
                 results.push({ jsonrpc: '2.0', error: { message: error.message }, id })
             }
         }

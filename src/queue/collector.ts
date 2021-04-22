@@ -21,7 +21,7 @@ export interface ServerConfig {
 
 export class Collector {
 
-    workMap: { [id: string]: (result: JSONRpcResponse) => any } = {}
+    workMap: { [id: string]: (error: string|null|undefined, result: JSONRpcResponse) => any } = {}
     totalRequests = 0
     workQueue = new Push
     resultQueue = new Subscriber
@@ -40,10 +40,10 @@ export class Collector {
         this.resultQueue.subscribe('result')
         console.log('start to wait for results')
         for await (const [_topic, msg] of this.resultQueue) {
-            const { id, result, name: worker, method } = JSON.parse(msg.toString())
+            const { id, error, result, name: worker, method } = JSON.parse(msg.toString())
             console.log(`received result for ${method} id ${id} from worker ${worker}`)
             if (this.workMap[id]) {
-                this.workMap[id](result)
+                this.workMap[id](error, result)
             } else {
                 console.error(`id ${id} not found in workmap`)
                 process.exit(1)
@@ -82,7 +82,12 @@ export class Collector {
                 return result
             }
         }
-        return await this.provideWork(method, params, id)
+        try{
+            return await this.provideWork(method, params, id)
+        } catch (error){
+            console.error(`error on request #${nonce}`, error.message)
+            throw Error(error.message)
+        }
     }
 
     private logRequest(method: string, params: any = [], nonce: number, id?: any) {
@@ -94,8 +99,13 @@ export class Collector {
     }
 
     private provideWork(method: string, params: any[] = [], id = uuidv4()): Promise<JSONRpcResponse> {
-        return new Promise(async (resolve) => {
-            this.workMap[id] = (result: JSONRpcResponse) => resolve(result)
+        return new Promise(async (resolve, reject) => {
+            this.workMap[id] = (error: string, result: JSONRpcResponse) => {
+                if(error){
+                    reject(Error(error))
+                }
+                return resolve(result)
+            }
             await this.workQueue.send(JSON.stringify({ method, params, id }))
         })
     }

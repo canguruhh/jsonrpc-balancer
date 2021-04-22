@@ -40,8 +40,12 @@ export class WSWorker {
         this.resultQueue.connect(this.config.resultQueueAddress)
         for await (const [msg] of this.workQueue) {
             const { id, method, params } = JSON.parse(msg.toString())
-            const result: Object = await this.rpc.call(method, params)
-            await this.resultQueue.send(['result', JSON.stringify({ result, id, name: this.config.name, method })])
+            try{
+                const result = await await this.rpc.call(method, params)
+                await this.resultQueue.send(['result', JSON.stringify({ result, id, name: this.config.name, method })])
+            } catch (error){
+                await this.resultQueue.send(['result', JSON.stringify({ error: error.message, id, name: this.config.name, method })])
+            }
         }
     }
 
