@@ -14,7 +14,7 @@ export interface HttpServerConfig {
 
 export class HttpServer {
 
-    counter = 0
+    totalHttpRequestCounter = 0
     app: Express
 
     constructor(private config: HttpServerConfig) {
@@ -27,6 +27,7 @@ export class HttpServer {
     initRoutes() {
         this.app.post('*', (req, res) => this._handleRpcRequest(req, res))
         this.app.get('/workers', (req, res) => this._handleCountWorkers(req, res))
+        this.app.get('/counter', (req, res) => this._handleCountRequests(req, res))
     }
 
     listen() {
@@ -36,13 +37,12 @@ export class HttpServer {
     }
 
     private async _handleRpcRequest(req: Request, res: Response) {
+        this.totalHttpRequestCounter++
         const isMulticall = Array.isArray(req.body)
         const jobs = isMulticall ? req.body : [req.body]
 
         const results = []
-
         for (const { method, params, id } of jobs) {
-            const nonce = this.counter
             try {
                 const result = await this.config.collector.call(method, params)
                 results.push({ jsonrpc: '2.0', id, result })
@@ -51,6 +51,10 @@ export class HttpServer {
             }
         }
         res.json(isMulticall ? results : results[0])
+    }
+
+    private async _handleCountRequests(_req: Request, res: Response) {
+        res.json(this.totalHttpRequestCounter)
     }
 
     private async _handleCountWorkers(_req: Request, res: Response) {
