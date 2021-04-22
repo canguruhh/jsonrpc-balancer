@@ -1,0 +1,1 @@
+export const LOG_PARAMS = process.env.LOG_PARAMS || false

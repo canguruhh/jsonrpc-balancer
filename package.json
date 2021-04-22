@@ -1,0 +1,31 @@
+{
+  "name": "jsonrpc-balancer",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "md5": "^2.3.0",
+    "node-cache": "^5.1.2",
+    "rpc-websocket-client": "^1.1.4",
+    "uuid": "^8.3.2",
+    "zeromq": "^6.0.0-beta.6"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "@types/md5": "^2.3.0",
+    "@types/node": "^14.14.41",
+    "@types/ws": "^7.4.1",
+    "typescript": "^4.2.4"
+  }
+}
