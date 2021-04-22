@@ -26,16 +26,11 @@ export class HttpServer {
             const isMulticall = Array.isArray(req.body)
             const jobs = isMulticall ? req.body : [req.body]
 
-            console.log(req.body)
             const results = []
 
             for (const { method, params, id } of jobs) {
                 const nonce = ++this.counter
-                if (LOG_PARAMS) {
-                    console.log(`#${nonce} incomming request ${method} with params ${JSON.stringify(params)}`)
-                } else {
-                    console.log(`#${nonce} incomming request ${method}`)
-                }
+                
                 try {
                     const result = await this.config.collector.call(method, params, nonce)
                     results.push({ jsonrpc: '2.0', id, result })
