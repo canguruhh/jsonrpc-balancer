@@ -1,6 +1,6 @@
 import { WSWorker } from './queue/worker'
 import { Collector } from './queue/collector'
-import { HTTP_BIND_ADDRESS, HTTP_PORT, ZMQ_RESULT_QUEUE_ADDRESS, ZMQ_WORK_QUEUE_ADDRESS } from './config/network'
+import { HTTP_BIND_ADDRESS, HTTP_PORT, WS_ENDPOINTS, ZMQ_RESULT_QUEUE_ADDRESS, ZMQ_WORK_QUEUE_ADDRESS } from './config/network'
 import { HttpServer } from './http/http.server'
 import { isWebsocketURL } from './helper/url.helper'
 
@@ -11,9 +11,7 @@ const collector = new Collector({
 })
 
 // Initialize one worker for every provided ws upstream
-const WS_ENDPOINTS = process.env.WS_ENDPOINTS || ''
-let workers: any = WS_ENDPOINTS.split(',')
-workers = workers.map((wsUrl: string) => {
+const workers = WS_ENDPOINTS.map((wsUrl: string) => {
     if (!isWebsocketURL(wsUrl)) {
         console.error(`invalid ws endpoint: ${wsUrl}`)
         process.exit(1)

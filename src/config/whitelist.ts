@@ -1,4 +1,4 @@
-export const whitelist = [
+export const DEFAULT_METHOD_WHITELIST = [
     "eth_blockNumber",
     "rpc_methods",
     "system_chain",
@@ -29,3 +29,4 @@ export const whitelist = [
     "net_version",
     "web3_clientVersion",
 ]
+export const METHOD_WHITELIST = process.env.METHOD_WHITELIST ? process.env.METHOD_WHITELIST.split(',') : DEFAULT_METHOD_WHITELIST

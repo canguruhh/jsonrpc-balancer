@@ -2,8 +2,9 @@ import md5 from 'md5'
 import NodeCache from 'node-cache'
 import { v4 as uuidv4 } from 'uuid'
 import { Push, Subscriber } from 'zeromq'
+import { CACHE_ENABLE, CACHE_METHODS } from '../config/cache'
 import { DEBUG_CACHE_EVENTS, LOG_PARAMS, LOG_REQUESTS } from '../config/log'
-import { whitelist } from '../config/whitelist'
+import { METHOD_WHITELIST } from '../config/whitelist'
 
 const cache = new NodeCache({ stdTTL: 5, checkperiod: 10 })
 
@@ -39,8 +40,8 @@ export class Collector {
         this.resultQueue.subscribe('result')
         console.log('start to wait for results')
         for await (const [_topic, msg] of this.resultQueue) {
-            const { id, result, name: worker } = JSON.parse(msg.toString())
-            console.log(`received result for work id ${id} from worker ${worker}`)
+            const { id, result, name: worker, method } = JSON.parse(msg.toString())
+            console.log(`received result for ${method} id ${id} from worker ${worker}`)
             if (this.workMap[id]) {
                 this.workMap[id](result)
             } else {
@@ -55,33 +56,33 @@ export class Collector {
         if (LOG_REQUESTS) {
             this.logRequest(method, params, nonce)
         }
-        if (whitelist.indexOf(method) === -1) {
+        if (METHOD_WHITELIST.indexOf(method) === -1) {
             throw Error('Access denied')
         }
-        switch (method) {
-            case 'rpc_methods':
-                return { methods: whitelist, version: 1 }
-            case 'eth_blockNumber':
-            case 'eth_chainId':
+        if(CACHE_ENABLE){
+            if(method === 'rpc_methods'){
+                return { methods: METHOD_WHITELIST, version: 1 }
+            }
+            if(CACHE_METHODS.indexOf(method)!==-1){
                 const cacheKey = md5(method).toString()
                 let result = cache.get(cacheKey)
                 if (result) {
-                    if(DEBUG_CACHE_EVENTS){
+                    if (DEBUG_CACHE_EVENTS) {
                         console.debug(`get result from cache for ${method} value: ${result}`)
                     }
                     return result
                 }
                 result = await this.provideWork(method, params, id)
                 if (result) {
-                    if(DEBUG_CACHE_EVENTS){
+                    if (DEBUG_CACHE_EVENTS) {
                         console.debug(`store ${result} cache for ${method}`)
                     }
                     cache.set(cacheKey, result)
                 }
                 return result
-            default:
-                return await this.provideWork(method, params, id)
+            }
         }
+        return await this.provideWork(method, params, id)
     }
 
     private logRequest(method: string, params: any = [], nonce: number) {
