@@ -42,12 +42,12 @@ export class HttpServer {
         const results = []
 
         for (const { method, params, id } of jobs) {
-            const nonce = ++this.counter
+            const nonce = this.counter
             try {
-                const result = await this.config.collector.call(method, params, nonce)
+                const result = await this.config.collector.call(method, params)
                 results.push({ jsonrpc: '2.0', id, result })
             } catch (error) {
-                console.error(`error on request #${nonce}`, error)
+                console.error(`error on request #${nonce}`, error.message)
                 results.push({ jsonrpc: '2.0', error: { message: error.message }, id })
             }
         }

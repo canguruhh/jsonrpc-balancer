@@ -54,7 +54,7 @@ export class Collector {
     async call(method: string, params: any[] = [], id = uuidv4()) {
         const nonce = ++this.totalRequests
         if (LOG_REQUESTS) {
-            this.logRequest(method, params, nonce)
+            this.logRequest(method, params, nonce, id)
         }
         if (METHOD_WHITELIST.indexOf(method) === -1) {
             throw Error('Access denied')
@@ -85,11 +85,11 @@ export class Collector {
         return await this.provideWork(method, params, id)
     }
 
-    private logRequest(method: string, params: any = [], nonce: number) {
+    private logRequest(method: string, params: any = [], nonce: number, id?: any) {
         if (LOG_PARAMS) {
-            console.log(`#${nonce} request ${method} with params ${JSON.stringify(params)}`)
+            console.log(`#${nonce} ${id} request ${method} with params ${JSON.stringify(params)}`)
         } else {
-            console.log(`#${nonce} request ${method}`)
+            console.log(`#${nonce} ${id} request ${method}`)
         }
     }
 
