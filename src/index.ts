@@ -18,6 +18,7 @@ const collector = new Collector({
 
 // Initialize one worker for every provided ws upstream
 const workers = WS_ENDPOINTS.map((wsEndpoint: WSEndpoint) => {
+    console.log(`connect to endpoint ${wsEndpoint.name} url: ${wsEndpoint.url}`)
     if (!isWebsocketURL(wsEndpoint.url)) {
         console.error(`invalid ws endpoint: ${wsEndpoint}`)
         process.exit(1)
@@ -29,7 +30,6 @@ const workers = WS_ENDPOINTS.map((wsEndpoint: WSEndpoint) => {
         name: wsEndpoint.name,
     })
 })
-
 
 // Start http server
 new HttpRPCEndpoint({
