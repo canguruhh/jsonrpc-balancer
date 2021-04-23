@@ -42,6 +42,7 @@ export class HttpRPCEndpoint {
         const results = []
         for (const { method, params, id } of jobs) {
             if(isBatch && !HTTP_RPC_ALLOW_BATCH){
+                this.config.metrics.incRpcMethodResponseCounter(method, 'batch_blocked')
                 results.push({ jsonrpc: '2.0', error: { message: 'batch call disabled' }, id})
             } else {
                 try {
