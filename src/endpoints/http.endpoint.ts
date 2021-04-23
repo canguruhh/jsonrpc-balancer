@@ -4,8 +4,6 @@ import cors from 'cors'
 import { Collector } from '../queue/collector'
 import { WSWorker } from '../queue/worker'
 import { Metrics } from '../monitoring/metrics'
-import { MONITORING_ACCESS_TOKEN } from '../config/monitoring'
-
 export interface HttpServerConfig {
     collector: Collector
     port: number
@@ -27,8 +25,6 @@ export class HttpRPCEndpoint {
 
     initRoutes() {
         this.app.post('*', (req, res) => this._handleRpcRequest(req, res))
-        this.app.get('/workers', (req, res) => this._handleCountWorkers(req, res))
-        this.app.get('/metrics', (req, res) => this._handleMetricsRequests(req, res))
     }
 
     listen() {
@@ -52,18 +48,6 @@ export class HttpRPCEndpoint {
             }
         }
         res.json(isMulticall ? results : results[0])
-    }
-
-    private async _handleMetricsRequests(_req: Request, res: Response) {
-        if(MONITORING_ACCESS_TOKEN && _req.header('x-access-token')!==MONITORING_ACCESS_TOKEN){
-            res.status(403).send('access denied')
-        } else {
-            res.send(await this.config.metrics.register.metrics())
-        }
-    }
-
-    private async _handleCountWorkers(_req: Request, res: Response) {
-        res.json(this.config.workers.length)
     }
 
 }
