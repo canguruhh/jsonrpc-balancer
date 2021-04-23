@@ -1,6 +1,6 @@
 import { RpcWebSocketClient } from 'rpc-websocket-client'
 import { Pull, Publisher } from 'zeromq'
-
+import { v4 as uuidv4 } from 'uuid'
 export interface WSWorkerConfig {
     url: string
     name: string
@@ -16,6 +16,7 @@ export class WSWorker {
 
     constructor(private config: WSWorkerConfig) {
         this.init()
+        this.rpc.customId(uuidv4)
     }
 
     private async reconnect() {
@@ -41,7 +42,7 @@ export class WSWorker {
         for await (const [msg] of this.workQueue) {
             const { id, method, params } = JSON.parse(msg.toString())
             try{
-                const result = await await this.rpc.call(method, params)
+                const result = await this.rpc.call(method, params)
                 await this.resultQueue.send(['result', JSON.stringify({ result, id, name: this.config.name, method })])
             } catch (error){
                 await this.resultQueue.send(['result', JSON.stringify({ error: error.message, id, name: this.config.name, method })])
