@@ -6,18 +6,18 @@ export class Metrics {
     register = new Registry()
 
     private httpRpcRequestCounter = new Counter({
-        name: 'http_rpc_request_count',
+        name: 'balancer_http_rpc_request_count',
         help: 'total number of http rpc requests',
     })
 
     private rpcMethodResponseCounter = new Counter({
-        name: 'rpc_method_response_status',
+        name: 'balancer_rpc_method_response_status',
         help: 'rpc response status. does not need to be a failed request. can also be an rpc request that returned an error message (evm_out_of_gas, ...).',
         labelNames: ['method', 'status',],
     })
 
     private rpcQueueDepth = new Gauge({
-        name: 'rpc_queue_depth',
+        name: 'balancer_rpc_queue_depth',
         help: 'number of pending rpc requests in queue',
     })
     
