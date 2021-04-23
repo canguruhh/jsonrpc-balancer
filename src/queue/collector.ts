@@ -103,7 +103,7 @@ export class Collector {
             return result
         } catch (error){
             console.error(`error on request #${nonce}`, error.message)
-            this.metrics.incRpcMethodResponseCounter(method, this.getErrorType(error))
+            this.metrics.incRpcMethodResponseCounter(method, this.getErrorType(error.message))
             throw Error(error.message)
         }
     }
