@@ -4,6 +4,7 @@ import cors from 'cors'
 import { Collector } from '../queue/collector'
 import { WSWorker } from '../queue/worker'
 import { Metrics } from '../monitoring/metrics'
+import { HTTP_RPC_ALLOW_BATCH } from '../config/rpc'
 export interface HttpServerConfig {
     collector: Collector
     port: number
@@ -35,19 +36,23 @@ export class HttpRPCEndpoint {
 
     private async _handleRpcRequest(req: Request, res: Response) {
         this.config.metrics.incHttpRequestCounter()
-        const isMulticall = Array.isArray(req.body)
-        const jobs = isMulticall ? req.body : [req.body]
-
+        const isBatch = Array.isArray(req.body)
+        const jobs = isBatch ? req.body : [req.body]
+        
         const results = []
         for (const { method, params, id } of jobs) {
-            try {
-                const result = await this.config.collector.call(method, params)
-                results.push({ jsonrpc: '2.0', id, result })
-            } catch (error) {
-                results.push({ jsonrpc: '2.0', error: { message: error.message }, id })
+            if(isBatch && !HTTP_RPC_ALLOW_BATCH){
+                results.push({ jsonrpc: '2.0', error: { message: 'batch call disabled' }, id})
+            } else {
+                try {
+                    const result = await this.config.collector.call(method, params)
+                    results.push({ jsonrpc: '2.0', id, result })
+                } catch (error) {
+                    results.push({ jsonrpc: '2.0', error: { message: error.message }, id })
+                }
             }
         }
-        res.json(isMulticall ? results : results[0])
+        res.json(isBatch ? results : results[0])
     }
 
 }

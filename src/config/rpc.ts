@@ -1,0 +1,1 @@
+export const HTTP_RPC_ALLOW_BATCH = process.env.HTTP_RPC_ALLOW_BATCH === 'true'
