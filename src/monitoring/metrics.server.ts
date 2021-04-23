@@ -31,11 +31,15 @@ export class MetricsServer {
         })
     }
 
-    private async _handleMetricsRequests(_req: Request, res: Response) {
-        if(MONITORING_ACCESS_TOKEN && _req.header('x-access-token')!==MONITORING_ACCESS_TOKEN){
-            res.status(403).send('access denied')
+    private async _handleMetricsRequests(req: Request, res: Response) {
+        if(MONITORING_ACCESS_TOKEN && req.header('x-access-token')!==MONITORING_ACCESS_TOKEN){
+            console.log(`metrics access denied for ${req.ip}`)
+            res.status(403)
+                .send('access denied')
         } else {
-            res.send(await this.config.metrics.register.metrics())
+            console.log(`metrics accessed from ${req.ip}`)
+            res.contentType(this.config.metrics.register.contentType)
+                .send(await this.config.metrics.register.metrics())
         }
     }
 
