@@ -3,18 +3,18 @@ import { json } from 'body-parser'
 import cors from 'cors'
 import { Collector } from '../queue/collector'
 import { WSWorker } from '../queue/worker'
-
+import { Metrics } from '../monitoring/prometheus'
 
 export interface HttpServerConfig {
     collector: Collector
     port: number
     bind_address: string
     workers: WSWorker[]
+    metrics: Metrics
 }
 
 export class HttpServer {
 
-    totalHttpRequestCounter = 0
     app: Express
 
     constructor(private config: HttpServerConfig) {
@@ -28,6 +28,9 @@ export class HttpServer {
         this.app.post('*', (req, res) => this._handleRpcRequest(req, res))
         this.app.get('/workers', (req, res) => this._handleCountWorkers(req, res))
         this.app.get('/counter', (req, res) => this._handleCountRequests(req, res))
+        this.app.get('/metrics', async (_req, res)=>{
+            res.send(await this.config.metrics.register.metrics())
+        })
     }
 
     listen() {
@@ -37,7 +40,7 @@ export class HttpServer {
     }
 
     private async _handleRpcRequest(req: Request, res: Response) {
-        this.totalHttpRequestCounter++
+        this.config.metrics.httpRpcRequestCounter.inc()
         const isMulticall = Array.isArray(req.body)
         const jobs = isMulticall ? req.body : [req.body]
 
@@ -54,7 +57,6 @@ export class HttpServer {
     }
 
     private async _handleCountRequests(_req: Request, res: Response) {
-        res.json(this.totalHttpRequestCounter)
     }
 
     private async _handleCountWorkers(_req: Request, res: Response) {

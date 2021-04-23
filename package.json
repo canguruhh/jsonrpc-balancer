@@ -17,6 +17,7 @@
     "express": "^4.17.1",
     "md5": "^2.3.0",
     "node-cache": "^5.1.2",
+    "prom-client": "^13.1.0",
     "rpc-websocket-client": "^1.1.4",
     "uuid": "^8.3.2",
     "zeromq": "^6.0.0-beta.6"

@@ -5,6 +5,7 @@ import { Push, Subscriber } from 'zeromq'
 import { CACHE_ENABLE, CACHE_METHODS } from '../config/cache'
 import { DEBUG_CACHE_EVENTS, LOG_PARAMS, LOG_REQUESTS } from '../config/log'
 import { METHOD_WHITELIST } from '../config/whitelist'
+import { Metrics } from '../monitoring/prometheus'
 
 const cache = new NodeCache({ stdTTL: 5, checkperiod: 10 })
 
@@ -17,6 +18,7 @@ export interface JSONRpcResponse {
 export interface ServerConfig {
     workQueueAddress: string
     resultQueueAddress: string
+    metrics: Metrics
 }
 
 export class Collector {
@@ -26,7 +28,15 @@ export class Collector {
     workQueue = new Push
     resultQueue = new Subscriber
 
+    metrics: Metrics
+
+    responseCounter = {
+        success: 0,
+        error: 0,
+    }
+
     constructor(private config: ServerConfig) {
+        this.metrics = config.metrics
         this.init()
     }
 
@@ -57,6 +67,7 @@ export class Collector {
             this.logRequest(method, params, nonce, id)
         }
         if (METHOD_WHITELIST.indexOf(method) === -1) {
+            this.metrics.rpcMethodResponseCounter.labels(method, 'access_denied').inc()
             throw Error('Access denied')
         }
         if(CACHE_ENABLE){
@@ -70,6 +81,7 @@ export class Collector {
                     if (DEBUG_CACHE_EVENTS) {
                         console.debug(`get result from cache for ${method} value: ${result}`)
                     }
+                    this.metrics.rpcMethodResponseCounter.labels(method, 'cached').inc()
                     return result
                 }
                 result = await this.provideWork(method, params, id)
@@ -79,13 +91,17 @@ export class Collector {
                     }
                     cache.set(cacheKey, result)
                 }
+                this.metrics.rpcMethodResponseCounter.labels(method, 'success').inc()
                 return result
             }
         }
         try{
-            return await this.provideWork(method, params, id)
+            const result = await this.provideWork(method, params, id)
+            this.metrics.rpcMethodResponseCounter.labels(method, 'success').inc()
+            return result
         } catch (error){
             console.error(`error on request #${nonce}`, error.message)
+            this.metrics.rpcMethodResponseCounter.labels(method, this.getErrorType(error)).inc()
             throw Error(error.message)
         }
     }
@@ -100,13 +116,26 @@ export class Collector {
 
     private provideWork(method: string, params: any[] = [], id = uuidv4()): Promise<JSONRpcResponse> {
         return new Promise(async (resolve, reject) => {
+            this.metrics.rpcQueueDepth.inc()
             this.workMap[id] = (error: string, result: JSONRpcResponse) => {
+                this.metrics.rpcQueueDepth.dec()
                 if(error){
-                    reject(Error(error))
+                    return reject(Error(error))
                 }
                 return resolve(result)
             }
             await this.workQueue.send(JSON.stringify({ method, params, id }))
         })
     }
+
+    private getErrorType(message: string){
+        switch(message){
+            case 'evm error: OutOfGas':
+                return 'evm_out_of_gas'
+            default:
+                console.error(`unregistered rpc response error: "${message}"`)
+                return 'other_error'
+        }
+    }
+
 }

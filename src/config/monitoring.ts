@@ -1,0 +1,1 @@
+export const MONITORING_NODE_NAME = process.env.MONITORING_NODE_NAME
