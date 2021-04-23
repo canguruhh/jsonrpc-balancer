@@ -1,9 +1,11 @@
 import { WSWorker } from './queue/worker'
 import { Collector } from './queue/collector'
 import { HTTP_BIND_ADDRESS, HTTP_PORT, WS_ENDPOINTS, ZMQ_RESULT_QUEUE_ADDRESS, ZMQ_WORK_QUEUE_ADDRESS } from './config/network'
-import { HttpServer } from './http/http.server'
+import { HttpRPCEndpoint } from './endpoints/http.endpoint'
 import { isWebsocketURL } from './helper/url.helper'
-import { Metrics } from './monitoring/prometheus'
+import { Metrics } from './monitoring/metrics'
+import { MetricsServer } from './monitoring/metrics.server'
+import { MONITORING_BIND_ADDRESS, MONITORING_PORT } from './config/monitoring'
 const metrics = new Metrics()
 
 // Setup collector queue to delegate jsonrpc requests to workers
@@ -29,11 +31,17 @@ const workers = WS_ENDPOINTS.map((wsUrl: string) => {
 
 
 // Start http server
-new HttpServer({
+new HttpRPCEndpoint({
     collector,
     port: HTTP_PORT,
     bind_address: HTTP_BIND_ADDRESS,
     workers,
+    metrics,
+}).listen()
+
+new MetricsServer({
+    port: MONITORING_PORT,
+    bind_address: MONITORING_BIND_ADDRESS,
     metrics,
 }).listen()
 

@@ -5,7 +5,7 @@ import { Push, Subscriber } from 'zeromq'
 import { CACHE_ENABLE, CACHE_METHODS } from '../config/cache'
 import { DEBUG_CACHE_EVENTS, LOG_PARAMS, LOG_REQUESTS } from '../config/log'
 import { METHOD_WHITELIST } from '../config/whitelist'
-import { Metrics } from '../monitoring/prometheus'
+import { Metrics } from '../monitoring/metrics'
 
 const cache = new NodeCache({ stdTTL: 5, checkperiod: 10 })
 
@@ -67,7 +67,7 @@ export class Collector {
             this.logRequest(method, params, nonce, id)
         }
         if (METHOD_WHITELIST.indexOf(method) === -1) {
-            this.metrics.rpcMethodResponseCounter.labels(method, 'access_denied').inc()
+            this.metrics.incRpcMethodResponseCounter(method, 'access_denied')
             throw Error('Access denied')
         }
         if(CACHE_ENABLE){
@@ -81,7 +81,7 @@ export class Collector {
                     if (DEBUG_CACHE_EVENTS) {
                         console.debug(`get result from cache for ${method} value: ${result}`)
                     }
-                    this.metrics.rpcMethodResponseCounter.labels(method, 'cached').inc()
+                    this.metrics.incRpcMethodResponseCounter(method, 'cached')
                     return result
                 }
                 result = await this.provideWork(method, params, id)
@@ -91,17 +91,17 @@ export class Collector {
                     }
                     cache.set(cacheKey, result)
                 }
-                this.metrics.rpcMethodResponseCounter.labels(method, 'success').inc()
+                this.metrics.incRpcMethodResponseCounter(method, 'success')
                 return result
             }
         }
         try{
             const result = await this.provideWork(method, params, id)
-            this.metrics.rpcMethodResponseCounter.labels(method, 'success').inc()
+            this.metrics.incRpcMethodResponseCounter(method, 'success')
             return result
         } catch (error){
             console.error(`error on request #${nonce}`, error.message)
-            this.metrics.rpcMethodResponseCounter.labels(method, this.getErrorType(error)).inc()
+            this.metrics.incRpcMethodResponseCounter(method, this.getErrorType(error))
             throw Error(error.message)
         }
     }
@@ -116,9 +116,10 @@ export class Collector {
 
     private provideWork(method: string, params: any[] = [], id = uuidv4()): Promise<JSONRpcResponse> {
         return new Promise(async (resolve, reject) => {
-            this.metrics.rpcQueueDepth.inc()
+
+            this.metrics.incRpcQueueDepth()
             this.workMap[id] = (error: string, result: JSONRpcResponse) => {
-                this.metrics.rpcQueueDepth.dec()
+                this.metrics.decRpcQueueDepth()
                 if(error){
                     return reject(Error(error))
                 }
