@@ -6,6 +6,7 @@ import { isWebsocketURL } from './helper/url.helper'
 import { Metrics } from './monitoring/metrics'
 import { MetricsServer } from './monitoring/metrics.server'
 import { MONITORING_BIND_ADDRESS, MONITORING_PORT } from './config/monitoring'
+import { WSEndpoint } from './interfaces'
 const metrics = new Metrics()
 
 // Setup collector queue to delegate jsonrpc requests to workers
@@ -16,16 +17,16 @@ const collector = new Collector({
 })
 
 // Initialize one worker for every provided ws upstream
-const workers = WS_ENDPOINTS.map((wsUrl: string) => {
-    if (!isWebsocketURL(wsUrl)) {
-        console.error(`invalid ws endpoint: ${wsUrl}`)
+const workers = WS_ENDPOINTS.map((wsEndpoint: WSEndpoint) => {
+    if (!isWebsocketURL(wsEndpoint.url)) {
+        console.error(`invalid ws endpoint: ${wsEndpoint}`)
         process.exit(1)
     }
     return new WSWorker({
-        url: wsUrl,
+        url: wsEndpoint.url,
         resultQueueAddress: ZMQ_RESULT_QUEUE_ADDRESS,
         workQueueAddress: ZMQ_WORK_QUEUE_ADDRESS,
-        name: wsUrl,
+        name: wsEndpoint.name,
     })
 })
 
