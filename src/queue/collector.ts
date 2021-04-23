@@ -55,6 +55,7 @@ export class Collector {
             console.log(`received result for ${method} id ${id} from worker ${worker}`)
             if (this.workMap[id]) {
                 this.workMap[id](error, result)
+                delete this.workMap[id]
             } else {
                 console.error(`id ${id} not found in workmap`)
                 process.exit(1)
