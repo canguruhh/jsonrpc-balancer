@@ -51,6 +51,7 @@ export class Collector {
         console.log('start to wait for results')
         for await (const [_topic, msg] of this.resultQueue) {
             const { id, error, result, name: worker, method } = JSON.parse(msg.toString())
+            this.metrics.incRpcWorkerResponseCounter(worker)
             console.log(`received result for ${method} id ${id} from worker ${worker}`)
             if (this.workMap[id]) {
                 this.workMap[id](error, result)

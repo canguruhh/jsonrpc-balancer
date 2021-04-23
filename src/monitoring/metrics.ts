@@ -20,6 +20,12 @@ export class Metrics {
         name: 'balancer_rpc_queue_depth',
         help: 'number of pending rpc requests in queue',
     })
+
+    private rpcWorkerResponseCounter = new Gauge({
+        name: 'balancer_rpc_queue_worker_respose_counter',
+        help: 'number of responses provided by a rpc queue worker',
+        labelNames: ['worker_name'],
+    })
     
     constructor(){
         if(MONITORING_NODE_NAME){
@@ -28,8 +34,13 @@ export class Metrics {
             })
         }
         this.register.registerMetric(this.httpRpcRequestCounter)
+        this.register.registerMetric(this.rpcWorkerResponseCounter)
         this.register.registerMetric(this.rpcMethodResponseCounter)
         this.register.registerMetric(this.rpcQueueDepth)
+    }
+
+    incRpcWorkerResponseCounter(workerName: string){
+        this.rpcWorkerResponseCounter.labels(workerName).inc()
     }
 
     incHttpRequestCounter(){
