@@ -135,6 +135,9 @@ export class Collector {
             case 'evm error: OutOfGas':
                 return 'evm_out_of_gas'
             default:
+                if(message.indexOf('call runtime failed: UnknownBlock("Require header: BlockId::Number')!==-1){
+                    return 'unknown_block'
+                }
                 console.error(`unregistered rpc response error: "${message}"`)
                 return 'other_error'
         }
