@@ -32,7 +32,7 @@ export class MetricsServer {
     }
 
     private async _handleMetricsRequests(req: Request, res: Response) {
-        if(MONITORING_ACCESS_TOKEN && req.header('x-access-token')!==MONITORING_ACCESS_TOKEN){
+        if(MONITORING_ACCESS_TOKEN && (req.header('x-access-token')!==MONITORING_ACCESS_TOKEN && req.query['x-access-token']!==MONITORING_ACCESS_TOKEN)){
             console.log(`metrics access denied for ${req.ip}`)
             res.status(403)
                 .send('access denied')
