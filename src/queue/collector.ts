@@ -66,7 +66,6 @@ export class Collector {
     }
 
     async call(method: string, params: any[] = [], id = uuidv4()) {
-        console.log('call', method)
         const nonce = ++this.totalRequests
         if (LOG_REQUESTS) {
             this.logRequest(method, params, nonce, id)
@@ -97,7 +96,6 @@ export class Collector {
                     cache.set(cacheKey, result)
                 }
                 this.metrics.incRpcMethodResponseCounter(method, 'success')
-                console.log('result', method, { result })
                 return result
             }
         }
