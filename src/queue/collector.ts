@@ -6,6 +6,8 @@ import { CACHE_ENABLE, CACHE_METHODS } from '../config/cache'
 import { DEBUG_CACHE_EVENTS, LOG_PARAMS, LOG_REQUESTS } from '../config/log'
 import { METHOD_WHITELIST } from '../config/whitelist'
 import { Metrics } from '../monitoring/metrics'
+import { BigNumber } from 'bignumber.js'
+import { ESTIMATE_GAS_LIMIT } from '../config/rpc'
 
 const cache = new NodeCache({ stdTTL: 5, checkperiod: 10 })
 
@@ -23,7 +25,7 @@ export interface ServerConfig {
 
 export class Collector {
 
-    workMap: { [id: string]: (error: string|null|undefined, result: JSONRpcResponse) => any } = {}
+    workMap: { [id: string]: (error: string | null | undefined, result: JSONRpcResponse) => any } = {}
     totalRequests = 0
     workQueue = new Push
     resultQueue = new Subscriber
@@ -64,6 +66,7 @@ export class Collector {
     }
 
     async call(method: string, params: any[] = [], id = uuidv4()) {
+        console.log('call', method)
         const nonce = ++this.totalRequests
         if (LOG_REQUESTS) {
             this.logRequest(method, params, nonce, id)
@@ -72,11 +75,11 @@ export class Collector {
             this.metrics.incRpcMethodResponseCounter(method, 'access_denied')
             throw Error('Access denied')
         }
-        if(CACHE_ENABLE){
-            if(method === 'rpc_methods'){
+        if (CACHE_ENABLE) {
+            if (method === 'rpc_methods') {
                 return { methods: METHOD_WHITELIST, version: 1 }
             }
-            if(CACHE_METHODS.indexOf(method)!==-1){
+            if (CACHE_METHODS.indexOf(method) !== -1) {
                 const cacheKey = md5(method).toString()
                 let result = cache.get(cacheKey)
                 if (result) {
@@ -94,14 +97,18 @@ export class Collector {
                     cache.set(cacheKey, result)
                 }
                 this.metrics.incRpcMethodResponseCounter(method, 'success')
+                console.log('result', method, { result })
                 return result
             }
         }
-        try{
-            const result = await this.provideWork(method, params, id)
+        try {
+            let result: any = await this.provideWork(method, params, id)
+            if (method === 'eth_estimateGas' && ESTIMATE_GAS_LIMIT && new BigNumber(result).gt(new BigNumber(ESTIMATE_GAS_LIMIT))) {
+                result = '0x' + new BigNumber(new BigNumber(ESTIMATE_GAS_LIMIT)).toString(16)
+            }
             this.metrics.incRpcMethodResponseCounter(method, 'success')
             return result
-        } catch (error){
+        } catch (error) {
             console.error(`error on request #${nonce}`, error.message)
             this.metrics.incRpcMethodResponseCounter(method, this.getErrorType(error.message))
             throw Error(error.message)
@@ -122,7 +129,7 @@ export class Collector {
             this.metrics.incRpcQueueDepth()
             this.workMap[id] = (error: string, result: JSONRpcResponse) => {
                 this.metrics.decRpcQueueDepth()
-                if(error){
+                if (error) {
                     return reject(Error(error))
                 }
                 return resolve(result)
@@ -131,12 +138,12 @@ export class Collector {
         })
     }
 
-    private getErrorType(message: string){
-        switch(message){
+    private getErrorType(message: string) {
+        switch (message) {
             case 'evm error: OutOfGas':
                 return 'evm_out_of_gas'
             default:
-                if(message.indexOf('call runtime failed: UnknownBlock("Require header: BlockId::Number')!==-1){
+                if (message.indexOf('call runtime failed: UnknownBlock("Require header: BlockId::Number') !== -1) {
                     return 'unknown_block'
                 }
                 console.error(`unregistered rpc response error: "${message}"`)
