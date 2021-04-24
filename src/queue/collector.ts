@@ -40,6 +40,9 @@ export class Collector {
     constructor(private config: ServerConfig) {
         this.metrics = config.metrics
         this.init()
+        if(ESTIMATE_GAS_LIMIT){
+            console.info(`found ESTIMATE_GAS_LIMIT env. gas limit estimation will be capped at ${ESTIMATE_GAS_LIMIT}`)
+        }
     }
 
     async init() {
