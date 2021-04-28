@@ -1,4 +1,4 @@
-import { RpcWebSocketClient } from 'rpc-websocket-client'
+import {Client} from 'jsonrpc2-ws'
 import { Pull, Publisher } from 'zeromq'
 import { v4 as uuidv4 } from 'uuid'
 export interface WSWorkerConfig {
@@ -10,18 +10,17 @@ export interface WSWorkerConfig {
 
 export class WSWorker {
 
-    rpc = new RpcWebSocketClient()
+    rpc = new Client(this.config.url, {autoConnect: true});
     workQueue = new Pull
     resultQueue = new Publisher
 
     constructor(private config: WSWorkerConfig) {
         this.init()
-        this.rpc.customId(uuidv4)
     }
 
     private async reconnect() {
         try {
-            await this.rpc.connect(this.config.url)
+            await this.rpc.connect()
             console.log(`websocket host ${this.config.url} reconnected`)
             return true
         } catch (error) {
@@ -31,11 +30,7 @@ export class WSWorker {
     }
 
     private async init() {
-        await this.rpc.connect(this.config.url)
-        this.rpc.onClose(async () => {
-            await delay(1000)
-            await this.reconnect()
-        })
+        await this.rpc.connect()
         console.log(`websocket host ${this.config.url} connected`)
         this.workQueue.connect(this.config.workQueueAddress)
         this.resultQueue.connect(this.config.resultQueueAddress)
@@ -50,12 +45,4 @@ export class WSWorker {
         }
     }
 
-}
-
-function delay(millis: number) {
-    return new Promise<void>((resolve) => {
-        setTimeout(() => {
-            resolve()
-        }, millis)
-    })
 }
