@@ -27,7 +27,7 @@ export class MetricsServer {
 
     listen() {
         return this.app.listen(this.config.port, this.config.bind_address, () => {
-            console.log(`metrics will be provided on http://${this.config.bind_address}:${this.config.port}/metrics`)
+            console.log(`metrics will be provided on ${this.config.bind_address}:${this.config.port}`)
         })
     }
 
