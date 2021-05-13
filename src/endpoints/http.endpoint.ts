@@ -5,6 +5,7 @@ import { Collector } from '../queue/collector'
 import { WSWorker } from '../queue/worker'
 import { Metrics } from '../monitoring/metrics'
 import { HTTP_RPC_ALLOW_BATCH } from '../config/rpc'
+import { CORS_ENABLE } from '../config/network'
 export interface HttpServerConfig {
     collector: Collector
     port: number
@@ -20,7 +21,10 @@ export class HttpRPCEndpoint {
     constructor(private config: HttpServerConfig) {
         this.app = express()
             .use(json())
-            .use(cors())
+        if(CORS_ENABLE){
+            this.app
+                .use(cors())
+        }
         this.initRoutes()
     }
 
