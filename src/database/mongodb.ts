@@ -23,6 +23,26 @@ export const LogSchema = new Schema({
     logIndex: 1,
 }, { unique: true })
 
+export const BlockSchema = new Schema({
+    number: {
+        type: Number,
+        index: true,
+    },
+    hash: {
+        type: String,
+        unique: true,
+    },
+    size: Number,
+    transactions: [String],
+    parentHash: String,
+    timestamp: Number,
+    gasUsed: Number,
+    miner: String,
+}, {
+    collection: 'block',
+})
+
+export const BlockModel = model('Block', BlockSchema)
 export const LogModel = model('Log', LogSchema)
 
 export interface GetLogsParams {
@@ -51,6 +71,11 @@ export class MongoDB {
             const db = await this.db
             db.disconnect()
         }
+    }
+
+    async getHeight() {
+        const latestBlock = await BlockModel.findOne({}, { number: 1 }, { sort: { number: -1 }, limit: 1, })
+        return latestBlock ? latestBlock.get('number') : 0
     }
 
     async getLogs(params: GetLogsParams) {
@@ -82,7 +107,8 @@ export class MongoDB {
             case 'pending':
                 throw Error('pending fromBlock currently not supported')
             case 'latest':
-                throw Error('latest fromBlock currently not supported')
+                params.fromBlock = await this.getHeight()
+                break
             case 'earliest':
                 params.fromBlock = 0
                 break
