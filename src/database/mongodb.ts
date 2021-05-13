@@ -128,7 +128,11 @@ export class MongoDB {
             }),
             ...(params.topics && { topics: params.topics }),
             ...(params.blockhash && { blockHash: params.blockhash }),
-        }, { _id: 0 }, { limit: 500, sort: { blockNumber: 1, transactionIndex: 1 } })
+        }, { _id: 0 }, { limit: 1001, sort: { blockNumber: 1, transactionIndex: 1 } })
+
+       if (logs.length > 1000) {
+            throw Error('limit of 1000 results exceeded')
+        }
 
         return logs.map(log => ({
             ...log.toObject(),
