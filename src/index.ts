@@ -7,6 +7,8 @@ import { Metrics } from './monitoring/metrics'
 import { MetricsServer } from './monitoring/metrics.server'
 import { MONITORING_BIND_ADDRESS, MONITORING_PORT } from './config/monitoring'
 import { WSEndpoint } from './interfaces'
+import { MONGO_URL } from './config/database'
+import { MongoDB } from './database/mongodb'
 const metrics = new Metrics()
 
 // Setup collector queue to delegate jsonrpc requests to workers
@@ -14,6 +16,7 @@ const collector = new Collector({
     resultQueueAddress: ZMQ_RESULT_QUEUE_ADDRESS,
     workQueueAddress: ZMQ_WORK_QUEUE_ADDRESS,
     metrics,
+    ...(MONGO_URL && { database: new MongoDB(MONGO_URL) }),
 })
 
 // Initialize one worker for every provided ws upstream

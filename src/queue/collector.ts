@@ -8,6 +8,7 @@ import { METHOD_WHITELIST } from '../config/whitelist'
 import { Metrics } from '../monitoring/metrics'
 import { BigNumber } from 'bignumber.js'
 import { ESTIMATE_GAS_LIMIT } from '../config/rpc'
+import { MongoDB } from '../database/mongodb'
 
 const cache = new NodeCache({ stdTTL: 5, checkperiod: 10 })
 
@@ -21,6 +22,7 @@ export interface ServerConfig {
     workQueueAddress: string
     resultQueueAddress: string
     metrics: Metrics
+    database?: MongoDB
 }
 
 export class Collector {
@@ -100,6 +102,13 @@ export class Collector {
                 }
                 this.metrics.incRpcMethodResponseCounter(method, 'success')
                 return result
+            }
+        }
+        if(this.config.database !== undefined){
+            if(method==='eth_getLogs'){
+                const logs = await this.config.database.getLogs(params[0])
+                this.metrics.incRpcMethodResponseCounter(method, 'db_lookup')
+                return logs
             }
         }
         try {

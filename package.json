@@ -18,6 +18,7 @@
     "express": "^4.17.1",
     "jsonrpc2-ws": "^1.0.0-beta18",
     "md5": "^2.3.0",
+    "mongoose": "^5.12.9",
     "node-cache": "^5.1.2",
     "prom-client": "^13.1.0",
     "uuid": "^8.3.2",
