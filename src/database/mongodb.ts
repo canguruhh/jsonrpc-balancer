@@ -78,7 +78,7 @@ export class MongoDB {
         return latestBlock ? latestBlock.get('number') : 0
     }
 
-    async getLogs(params: GetLogsParams) {
+    async getLogs(params: GetLogsParams = {}) {
 
         if (params.blockhash && params.fromBlock) {
             throw Error('blockhash is not allowed to be specified along fromBlock')
