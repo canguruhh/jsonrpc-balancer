@@ -1,6 +1,5 @@
 import express, { Express, Request, Response } from 'express'
 import { json } from 'body-parser'
-import cors from 'cors'
 import { Metrics } from './metrics'
 import { MONITORING_ACCESS_TOKEN } from '../config/monitoring'
 
@@ -17,7 +16,8 @@ export class MetricsServer {
     constructor(private config: MetricsServerConfig) {
         this.app = express()
             .use(json())
-            .use(cors())
+            .set('trust proxy', true)
+        
         this.initRoutes()
     }
 

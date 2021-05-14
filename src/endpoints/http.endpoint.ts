@@ -21,6 +21,8 @@ export class HttpRPCEndpoint {
     constructor(private config: HttpServerConfig) {
         this.app = express()
             .use(json())
+            .set('trust proxy', true)
+        
         if(CORS_ENABLE){
             this.app
                 .use(cors())
