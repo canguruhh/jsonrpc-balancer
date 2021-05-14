@@ -138,6 +138,7 @@ export class MongoDB {
 
         return logs.map(log => ({
             ...log.toObject(),
+            logIndex: '0x' + Number(log.get('logIndex')).toString(16),
             transactionIndex: '0x' + Number(log.get('transactionIndex')).toString(16),
             blockNumber: '0x' + Number(log.get('blockNumber')).toString(16),
         }))
