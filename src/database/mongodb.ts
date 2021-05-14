@@ -1,5 +1,5 @@
 import { Schema, connect, model, Mongoose } from 'mongoose'
-
+import { flattenDeep } from 'lodash'
 export const LogSchema = new Schema({
     id: {
         type: String,
@@ -49,7 +49,7 @@ export interface GetLogsParams {
     address?: string
     fromBlock?: number | 'latest' | 'earliest' | 'pending'
     toBlock?: number | 'latest' | 'earliest' | 'pending'
-    topics?: string
+    topics?: string | string[] | string[][]
     blockhash?: string
 }
 
@@ -103,6 +103,8 @@ export class MongoDB {
                 params.toBlock = Number(params.toBlock)
         }
 
+        params.topics = Array.isArray(params.topics) ? flattenDeep(params.topics) : [params.topics]
+
         switch (params.fromBlock) {
             case 'pending':
                 throw Error('pending fromBlock currently not supported')
@@ -126,11 +128,11 @@ export class MongoDB {
                     ...(params.fromBlock && { $gte: params.fromBlock }),
                 }
             }),
-            ...(params.topics && { topics: params.topics }),
+            ...(params.topics && { topics: { $in: params.topics } }),
             ...(params.blockhash && { blockHash: params.blockhash }),
         }, { _id: 0 }, { limit: 1001, sort: { blockNumber: 1, transactionIndex: 1 }, collation: { locale: 'en', strength: 2 }, })
 
-       if (logs.length > 1000) {
+        if (logs.length > 1000) {
             throw Error('limit of 1000 results exceeded')
         }
 
