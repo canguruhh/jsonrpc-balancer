@@ -7,7 +7,7 @@ import { DEBUG_CACHE_EVENTS, LOG_PARAMS, LOG_REQUESTS } from '../config/log'
 import { METHOD_WHITELIST } from '../config/whitelist'
 import { Metrics } from '../monitoring/metrics'
 import { BigNumber } from 'bignumber.js'
-import { ESTIMATE_GAS_LIMIT } from '../config/rpc'
+import { ESTIMATE_GAS_IGNORE_GASPRICE_PARAM, ESTIMATE_GAS_LIMIT } from '../config/rpc'
 import { MongoDB } from '../database/mongodb'
 
 const cache = new NodeCache({ stdTTL: 5, checkperiod: 10 })
@@ -103,6 +103,9 @@ export class Collector {
                 this.metrics.incRpcMethodResponseCounter(method, 'success')
                 return result
             }
+        }
+        if(method==='eth_estimateGas' && ESTIMATE_GAS_IGNORE_GASPRICE_PARAM && params.length && params[0].gasPrice ){
+            delete params[0].gasPrice
         }
         if(this.config.database !== undefined){
             if(method==='eth_getLogs'){
