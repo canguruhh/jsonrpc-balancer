@@ -116,6 +116,12 @@ export class Collector {
         }
         try {
             let result: any = await this.provideWork(method, params, id)
+            if(method === 'eth_getTransactionReceipt' && result && result.logs && result.logs.length){
+                result.logs = result.logs.map(log=>{
+                    log.transactionHash = result.transactionHash
+                    return log
+                })
+            }
             if (method === 'eth_estimateGas' && ESTIMATE_GAS_LIMIT && new BigNumber(result).gt(new BigNumber(ESTIMATE_GAS_LIMIT))) {
                 result = '0x' + new BigNumber(new BigNumber(ESTIMATE_GAS_LIMIT)).toString(16)
             }
