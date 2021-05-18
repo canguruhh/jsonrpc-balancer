@@ -42,7 +42,7 @@ export class Collector {
     constructor(private config: ServerConfig) {
         this.metrics = config.metrics
         this.init()
-        if(ESTIMATE_GAS_LIMIT){
+        if (ESTIMATE_GAS_LIMIT) {
             console.info(`found ESTIMATE_GAS_LIMIT env. gas limit estimation will be capped at ${ESTIMATE_GAS_LIMIT}`)
         }
     }
@@ -104,11 +104,16 @@ export class Collector {
                 return result
             }
         }
-        if(method==='eth_estimateGas' && ESTIMATE_GAS_IGNORE_GASPRICE_PARAM && params.length && params[0].gasPrice ){
+        if (method === 'eth_estimateGas' && ESTIMATE_GAS_IGNORE_GASPRICE_PARAM && params.length && params[0].gasPrice) {
             delete params[0].gasPrice
         }
-        if(this.config.database !== undefined){
-            if(method==='eth_getLogs'){
+        // fix genesis hash index problem
+        if (method === 'eth_getBlockByHash' && params[0] === '0xddc1c52f75e6ccdde13a17db832018d3e2942174d687fd6b4515c94643c3380a') {
+            method = 'eth_getBlockByNumber'
+            params[0] = 0
+        }
+        if (this.config.database !== undefined) {
+            if (method === 'eth_getLogs') {
                 const logs = await this.config.database.getLogs(params[0])
                 this.metrics.incRpcMethodResponseCounter(method, 'db_lookup')
                 return logs
@@ -116,8 +121,8 @@ export class Collector {
         }
         try {
             let result: any = await this.provideWork(method, params, id)
-            if(method === 'eth_getTransactionReceipt' && result && result.logs && result.logs.length){
-                result.logs = result.logs.map(log=>{
+            if (method === 'eth_getTransactionReceipt' && result && result.logs && result.logs.length) {
+                result.logs = result.logs.map(log => {
                     log.transactionHash = result.transactionHash
                     return log
                 })
