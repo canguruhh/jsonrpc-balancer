@@ -10,6 +10,7 @@ import { BigNumber } from 'bignumber.js'
 import { ESTIMATE_GAS_IGNORE_GASPRICE_PARAM, ESTIMATE_GAS_LIMIT } from '../config/rpc'
 import { MongoDB } from '../database/mongodb'
 
+
 const cache = new NodeCache({ stdTTL: 5, checkperiod: 10 })
 
 export interface JSONRpcResponse {
@@ -121,18 +122,6 @@ export class Collector {
         }
         try {
             let result: any = await this.provideWork(method, params, id)
-            if (method === 'eth_getTransactionReceipt' && result && result.logs && result.logs.length) {
-                // remove logs from failed transactions
-                if(result.status=='0x0'){
-                    result.logsBloom = '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
-                    result.logs = []
-                }
-                // fix transaction hash in logs
-                result.logs = result.logs.map(log => {
-                    log.transactionHash = result.transactionHash
-                    return log
-                })
-            }
             if (method === 'eth_estimateGas' && ESTIMATE_GAS_LIMIT && new BigNumber(result).gt(new BigNumber(ESTIMATE_GAS_LIMIT))) {
                 result = '0x' + new BigNumber(new BigNumber(ESTIMATE_GAS_LIMIT)).toString(16)
             }
