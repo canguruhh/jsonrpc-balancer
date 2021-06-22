@@ -125,6 +125,12 @@ export class Collector {
             if (method === 'eth_estimateGas' && ESTIMATE_GAS_LIMIT && new BigNumber(result).gt(new BigNumber(ESTIMATE_GAS_LIMIT))) {
                 result = '0x' + new BigNumber(new BigNumber(ESTIMATE_GAS_LIMIT)).toString(16)
             }
+            if(method ==='eth_getTransactionReceipt' && result && result.logs && result.logs.length){
+                result.logs = result.logs.map(log=>({
+                    ...log,
+                    transactionHash: result.transactionHash
+                }))
+            }
             this.metrics.incRpcMethodResponseCounter(method, 'success')
             return result
         } catch (error) {
