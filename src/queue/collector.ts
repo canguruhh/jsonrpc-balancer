@@ -113,9 +113,6 @@ export class Collector {
             method = 'eth_getBlockByNumber'
             params[0] = 0
         }
-        if( method === 'eth_getBlockByHash'){
-            console.log(await this.config.database.getBlockByHash(params[0]))
-        }
         if (this.config.database !== undefined) {
             if (method === 'eth_getLogs') {
                 const logs = await this.config.database.getLogs(params[0])
@@ -125,9 +122,6 @@ export class Collector {
         }
         try {
             let result: any = await this.provideWork(method, params, id)
-            if (method === 'eth_getTransactionReceipt' && result && result.logs && result.logs.length) {
-                
-            }
             if (method === 'eth_estimateGas' && ESTIMATE_GAS_LIMIT && new BigNumber(result).gt(new BigNumber(ESTIMATE_GAS_LIMIT))) {
                 result = '0x' + new BigNumber(new BigNumber(ESTIMATE_GAS_LIMIT)).toString(16)
             }
